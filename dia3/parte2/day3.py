@@ -9,7 +9,7 @@ def max_joltage(bank: str, k: int = 12) -> int:
     return int("".join(stack))
 
 total = 0
-with open("bateria.txt", "r", encoding="utf-8") as f:
+with open("data/bateria.txt", "r", encoding="utf-8") as f:
     for line in f:
         bank = line.strip()
         if not bank:

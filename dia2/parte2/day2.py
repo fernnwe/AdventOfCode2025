@@ -17,7 +17,7 @@ def es_invalido(n):
 
 total = 0
 
-with open("id.txt", "r") as f:
+with open("data/id.txt", "r") as f:
     contenido = f.read().strip()
 
 rangos = contenido.split(",")

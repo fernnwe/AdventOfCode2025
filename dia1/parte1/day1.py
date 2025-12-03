@@ -2,7 +2,7 @@ def solve_day1():
     position = 50
     count_zero = 0
     
-    with open("input.txt", "r") as f:
+    with open("data/input.txt", "r") as f:
         lines = f.read().strip().splitlines()
 
     for line in lines:
