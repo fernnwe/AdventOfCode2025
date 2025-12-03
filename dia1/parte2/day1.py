@@ -1,6 +1,6 @@
 # Parte 2 - Contar cada vez que el dial pasa por 0
 
-with open("input.txt") as f:
+with open("data/input.txt") as f:
     rotations = [line.strip() for line in f.readlines()]
 
 dial = 50

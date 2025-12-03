@@ -20,7 +20,7 @@ def max_two_digit_from_bank(bank: str) -> int:
     return best
 
 total = 0
-with open("bateria.txt", "r", encoding="utf-8") as f:
+with open("data/bateria.txt", "r", encoding="utf-8") as f:
     for line in f:
         bank = line.strip()
         if not bank:
