@@ -1,93 +1,79 @@
-import math
-from itertools import combinations
-from functools import reduce
-import operator
+from itertools import product
 
-class UF:
-    def __init__(self, n):
-        self.parent = list(range(n))
-        self.rank = [0] * n
+# ---------- Leer input ----------
+points = []
+with open("data/day9.txt") as f:
+    for line in f:
+        line = line.strip()
+        if line:
+            x, y = map(int, line.split(","))
+            points.append((x, y))
 
-    def find(self, x):
-        if self.parent[x] != x:
-            self.parent[x] = self.find(self.parent[x])
-        return self.parent[x]
+# ---------- Crear los tiles válidos ----------
+valid_tiles = set(points)  # los puntos rojos ya son válidos
 
-    def union(self, x, y):
-        xr = self.find(x)
-        yr = self.find(y)
-        if xr == yr:
-            return False
-        if self.rank[xr] < self.rank[yr]:
-            self.parent[xr] = yr
-        elif self.rank[xr] > self.rank[yr]:
-            self.parent[yr] = xr
-        else:
-            self.parent[yr] = xr
-            self.rank[xr] += 1
-        return True
+# Conectar puntos consecutivos con segmentos verdes
+for i in range(len(points)):
+    x1, y1 = points[i]
+    x2, y2 = points[(i + 1) % len(points)]  # wrap-around
+    if x1 == x2:  # línea vertical
+        for y in range(min(y1, y2), max(y1, y2) + 1):
+            valid_tiles.add((x1, y))
+    elif y1 == y2:  # línea horizontal
+        for x in range(min(x1, x2), max(x1, x2) + 1):
+            valid_tiles.add((x, y1))
+    else:
+        raise ValueError("Los puntos consecutivos no están en línea recta!")
 
-def get_input(filename="data/day8.txt"):
-    pos_data = []
-    with open(filename, "r") as f:
-        for line in f:
-            x, y, z = map(int, line.strip().split(","))
-            pos_data.append({"x": x, "y": y, "z": z})
-    return pos_data
+# ---------- Rasterizar el interior del polígono ----------
+# Usaremos bounding box + scanline para llenar el interior
+min_x = min(x for x, y in points)
+max_x = max(x for x, y in points)
+min_y = min(y for x, y in points)
+max_y = max(y for x, y in points)
 
-def distance3D(a, b):
-    dx = a["x"] - b["x"]
-    dy = a["y"] - b["y"]
-    dz = a["z"] - b["z"]
-    return math.sqrt(dx*dx + dy*dy + dz*dz)
+def point_in_polygon(px, py, poly):
+    inside = False
+    j = len(poly) - 1
+    for i in range(len(poly)):
+        xi, yi = poly[i]
+        xj, yj = poly[j]
+        if ((yi > py) != (yj > py)):
+            x_intersect = (xj - xi) * (py - yi) / (yj - yi + 0.0) + xi
+            if px < x_intersect:
+                inside = not inside
+        j = i
+    return inside
 
-def setup(pos_data):
-    memo = []
-    N = len(pos_data)
-    k = 0
-    for i in range(N):
-        for j in range(i + 1, N):
-            memo.append({
-                "dist": distance3D(pos_data[i], pos_data[j]),
-                "a": i,
-                "b": j
-            })
-            k += 1
-    memo.sort(key=lambda e: e["dist"])
-    return memo
+# Llenar todos los tiles dentro del polígono como verdes
+for x in range(min_x, max_x + 1):
+    for y in range(min_y, max_y + 1):
+        if (x, y) not in valid_tiles and point_in_polygon(x, y, points):
+            valid_tiles.add((x, y))
 
-def answer1(pos_data, memo):
-    uf = UF(len(pos_data))
-    N = len(pos_data)
-    # Igual que Lua: solo las primeras N aristas
-    for i in range(N):
-        e = memo[i]
-        uf.union(e["a"], e["b"])
-    
-    sizes = {}
-    for i in range(len(pos_data)):
-        r = uf.find(i)
-        sizes[r] = sizes.get(r, 0) + 1
+# ---------- Parte 1 ----------
+def answer1():
+    biggest = 0
+    for i, (x1, y1) in enumerate(points):
+        for x2, y2 in points[i+1:]:
+            area = (abs(x2 - x1) + 1) * (abs(y2 - y1) + 1)
+            if area > biggest:
+                biggest = area
+    return biggest
 
-    largest = sorted(sizes.values(), reverse=True)
-    while len(largest) < 3:
-        largest.append(1)
-    
-    return largest[0] * largest[1] * largest[2]
+# ---------- Parte 2 ----------
+def answer2():
+    biggest = 0
+    for i, (x1, y1) in enumerate(points):
+        for x2, y2 in points[i+1:]:
+            xmin, xmax = min(x1, x2), max(x1, x2)
+            ymin, ymax = min(y1, y2), max(y1, y2)
+            # Verificar si todo el rectángulo está dentro de valid_tiles
+            if all((x, y) in valid_tiles for x, y in product(range(xmin, xmax + 1), range(ymin, ymax + 1))):
+                area = (xmax - xmin + 1) * (ymax - ymin + 1)
+                if area > biggest:
+                    biggest = area
+    return biggest
 
-def answer2(pos_data, memo):
-    uf = UF(len(pos_data))
-    components = len(pos_data)
-    
-    for e in memo:
-        if uf.union(e["a"], e["b"]):
-            components -= 1
-            if components == 1:
-                return pos_data[e["a"]]["x"] * pos_data[e["b"]]["x"]
-    return -1
-
-if __name__ == "__main__":
-    pos_data = get_input("data/day8.txt")
-    memo = setup(pos_data)
-    print("Answer 1:", answer1(pos_data, memo))
-    print("Answer 2:", answer2(pos_data, memo))
+print("answer 1 =", answer1())
+print("answer 2 =", answer2())
