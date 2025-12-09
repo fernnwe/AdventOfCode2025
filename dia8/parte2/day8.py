@@ -1,3 +1,4 @@
+#Creditos de respuesta: Deybis Melendez - Programador fullstack, emprendedor y negociante
 import math
 from itertools import combinations
 from functools import reduce
@@ -59,7 +60,6 @@ def setup(pos_data):
 def answer1(pos_data, memo):
     uf = UF(len(pos_data))
     N = len(pos_data)
-    # Igual que Lua: solo las primeras N aristas
     for i in range(N):
         e = memo[i]
         uf.union(e["a"], e["b"])
