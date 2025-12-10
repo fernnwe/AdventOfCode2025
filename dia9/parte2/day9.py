@@ -1,35 +1,95 @@
-import itertools
-with open("day9.txt") as f:
-    red_points = [tuple(map(int, line.strip().split(","))) for line in f if line.strip()]
-valid_points = set(red_points)
+from dataclasses import dataclass
 
-for i in range(len(red_points)):
-    x1, y1 = red_points[i]
-    x2, y2 = red_points[(i + 1) % len(red_points)]  # siguiente punto, con wrap
-    if x1 == x2:  # misma columna
-        for y in range(min(y1, y2), max(y1, y2) + 1):
-            valid_points.add((x1, y))
-    elif y1 == y2:  # misma fila
-        for x in range(min(x1, x2), max(x1, x2) + 1):
-            valid_points.add((x, y1))
-    else:
-        raise ValueError("Dos puntos consecutivos no están alineados en fila o columna")
+@dataclass
+class Point:
+    x: int
+    y: int
 
-def rect_inside(a, b):
-    x1, y1 = a
-    x2, y2 = b
-    for x in range(min(x1, x2), max(x1, x2) + 1):
-        for y in range(min(y1, y2), max(y1, y2) + 1):
-            if (x, y) not in valid_points:
-                return False
-    return True
-max_area = 0
-for a, b in itertools.combinations(red_points, 2):
-    if rect_inside(a, b):
-        width = abs(a[0] - b[0]) + 1
-        height = abs(a[1] - b[1]) + 1
-        area = width * height
-        if area > max_area:
-            max_area = area
+@dataclass
+class Rect:
+    min: Point
+    max: Point
 
-print("Largest rectangle area (Part 2):", max_area)
+    def canon(self):
+        return Rect(
+            Point(min(self.min.x, self.max.x), min(self.min.y, self.max.y)),
+            Point(max(self.min.x, self.max.x), max(self.min.y, self.max.y)),
+        )
+
+    def add1(self):
+        return Rect(self.min, Point(self.max.x + 1, self.max.y + 1))
+
+    def dx(self):
+        return self.max.x - self.min.x
+
+    def dy(self):
+        return self.max.y - self.min.y
+
+    def inset1(self):
+        return Rect(
+            Point(self.min.x + 1, self.min.y + 1),
+            Point(self.max.x - 1, self.max.y - 1)
+        )
+
+    def overlaps(self, other):
+        return not (
+            self.max.x <= other.min.x or
+            self.min.x >= other.max.x or
+            self.max.y <= other.min.y or
+            self.min.y >= other.max.y
+        )
+
+def read_points():
+    points = []
+    with open("data/day9.txt") as f:
+        for token in f.read().split():
+            x, y = map(int, token.split(","))
+            points.append(Point(x, y))
+    return points
+
+def main():
+    points = read_points()
+
+    rects = []
+    lines = []
+
+    # Generate all rectangles from red points
+    for i, p in enumerate(points):
+        for q in points[:i]:
+            rects.append(Rect(p, q).canon())
+
+        if i > 0:
+            lines.append(Rect(points[i - 1], points[i]).canon())
+
+    # Close loop
+    lines.append(Rect(points[-1], points[0]).canon())
+
+    part1 = 0
+    part2 = 0
+
+    for r in rects:
+        r2 = r.add1()  # expand
+        area = r2.dx() * r2.dy()
+
+        # track part1
+        if area > part1:
+            part1 = area
+
+        if area <= part2:
+            continue
+
+        # check if ANY line overlaps inset rectangle
+        inset = r2.inset1()
+        bad = False
+        for l in lines:
+            if l.add1().overlaps(inset):
+                bad = True
+                break
+
+        if not bad:
+            part2 = area
+
+    print("Part 2:", part2)
+
+if __name__ == "__main__":
+    main()
