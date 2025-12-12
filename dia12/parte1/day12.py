@@ -11,7 +11,6 @@ class Region:
 
     @property
     def could_fit(self) -> bool:
-        # Sumamos la cantidad de celdas ocupadas por cada forma
         total_cells_needed = sum(count * len(shapes[idx]) for idx, count in enumerate(self.shapes))
         return self.width * self.length >= total_cells_needed
 
@@ -46,8 +45,6 @@ if __name__ == "__main__":
 
     if not input_path.exists():
         raise FileNotFoundError(f"No se encontró el archivo: {input_path}")
-
-    # Leemos el contenido
     with input_path.open("r", encoding="utf-8") as f:
         data = f.read().strip().split("\n\n")
 
